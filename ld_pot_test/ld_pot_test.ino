@@ -2,6 +2,9 @@
 // Uses DigitLedDisplay library
 
 #include "DigitLedDisplay.h"
+#include "curveFitting.h"
+
+#include "initial_data.h"
 
 // Pins
 int voltage_pot_pin = 7;
