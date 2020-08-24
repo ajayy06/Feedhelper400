@@ -29,11 +29,11 @@ int filtered_avg;
 
 // Additional optimization variables
 uint8_t delay_time = 0;
-int old_voltage = 101;
+float old_voltage = 10.1;
 
 // Final parameters
-int voltage = 0;
-int feed = 0;
+float voltage = 0;
+float feed = 0;
 
 int BOOT_DELAY = 30;
 
@@ -72,19 +72,19 @@ void loop() {
   }
 
   // CALCULATE THE VOLTAGE
-  voltage = map(filtered_avg, 10, 1010, 0, 100);
-  if (voltage > 100) {
-    voltage = 100;
+  voltage = map(filtered_avg, 10, 1010, 0, 100) / 10.0;
+  if (voltage > 10.0) {
+    voltage = 10.0;
   }
 
-  if (voltage < 0) {
-    voltage = 0;
+  if (voltage < 0.0) {
+    voltage = 0.0;
   }
 
 
   if (delay_time > 20 && voltage != old_voltage) {
     old_voltage = voltage;
-    int feed = calculateFeed(voltage);
+    feed = calculateFeed(voltage);
     updateDisplay(voltage, feed);
     delay_time = 0;
   }
@@ -104,20 +104,22 @@ void displayDigit(byte address, int val, bool decimalpoint = false) {
 }
 
 
-void updateDisplay(int voltage, int feed) {
+void updateDisplay(float voltage, float feed) {
+  int voltage_int = voltage * 10;
+  int feed_int = feed * 10;
   ld.clear();
 
   int voltage_digits[3];
-  voltage_digits[0] = voltage / 100;
-  voltage -= voltage_digits[0] * 100;
-  voltage_digits[1] = voltage / 10;
-  voltage_digits[2] = voltage % 10;
+  voltage_digits[0] = voltage_int / 100;
+  voltage_int -= voltage_digits[0] * 100;
+  voltage_digits[1] = voltage_int / 10;
+  voltage_digits[2] = voltage_int % 10;
 
   int feed_digits[3];
-  feed_digits[0] = feed / 100;
-  feed -= feed_digits[0] * 100;
-  feed_digits[1] = feed / 10;
-  feed_digits[2] = feed % 10;
+  feed_digits[0] = feed_int / 100;
+  feed_int -= feed_digits[0] * 100;
+  feed_digits[1] = feed_int / 10;
+  feed_digits[2] = feed_int % 10;
 
   int current_addr = 1;
   for (int i = 2; i >= 0; i--) {
@@ -147,8 +149,8 @@ void updateDisplay(int voltage, int feed) {
   }
 }
 
-int calculateFeed(int voltage) {
-  return voltage * 18 / 10;
+float calculateFeed(float voltage) {
+  return voltage * 1.8;
 }
 
 int rollingAverage(const int analog_input_pin) {
