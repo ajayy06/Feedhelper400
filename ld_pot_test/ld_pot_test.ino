@@ -1,7 +1,7 @@
 // 8 Digit, 7-segment display first test
 // Uses DigitLedDisplay library
 
-#include "DigitLedDisplay_mod.h"
+#include "DigitLedDisplay.h"
 #include "curveFitting.h"
 
 #include "initial_data.h"
@@ -47,7 +47,7 @@ void setup() {
   }
   
   // Brightness
-  ld.setBright(15);
+  ld.setBright(10);
 
   // Digit count
   ld.setDigitLimit(8);
@@ -92,6 +92,17 @@ void loop() {
   delay(1);
 }
 
+void displayDigit(byte address, int val, bool decimalpoint = false) {
+	byte tableValue;
+  if (!decimalpoint) {
+    tableValue = pgm_read_byte_near(charTable + val);
+  } else {
+    tableValue = pgm_read_byte_near(charTable + val) | B10000000;
+  }
+	
+	ld.write(address, tableValue);
+}
+
 
 void updateDisplay(int voltage, int feed) {
   ld.clear();
@@ -120,16 +131,16 @@ void updateDisplay(int voltage, int feed) {
     }
 
     if (current_addr == 2) {
-      ld.tableWithPoint(current_addr + 4, voltage_digits[i]);
+      displayDigit(current_addr + 4, voltage_digits[i], true);
       delay(1);
-      ld.tableWithPoint(current_addr, feed_digits[i]);
+      displayDigit(current_addr, feed_digits[i], true);
     } else {
       if (!(i == 0 && voltage_digits[i] == 0)) {
-        ld.table(current_addr + 4, voltage_digits[i]);
+        displayDigit(current_addr + 4, voltage_digits[i]);
       }
       delay(1);
       if (!(i == 0 && feed_digits[i] == 0)) {
-        ld.table(current_addr, feed_digits[i]);
+        displayDigit(current_addr, feed_digits[i]);
       }
     }
     current_addr++;
