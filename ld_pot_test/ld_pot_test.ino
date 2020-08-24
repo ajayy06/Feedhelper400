@@ -1,7 +1,7 @@
 // 8 Digit, 7-segment display first test
 // Uses DigitLedDisplay library
 
-#include "DigitLedDisplay.h"
+#include "DigitLedDisplay_mod.h"
 #include "curveFitting.h"
 
 #include "initial_data.h"
