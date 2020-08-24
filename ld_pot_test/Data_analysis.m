@@ -42,7 +42,7 @@ u_f(x) = A*x^2 + B*x + C;
 
 diff_u_f = diff(u_f);
 fit_min = solve(diff_u_f == 0, x);
-fplot(u_f, [double(fit_min), 18]);
+fplot(u_f);
 
 
 

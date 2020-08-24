@@ -1,6 +1,6 @@
 // Initial data for voltage/feed display unit
 
-float voltages[50] = {  3.4,
+double voltages[7] = {  3.4,
                         4.0,
                         4.4,
                         4.8,
@@ -9,7 +9,7 @@ float voltages[50] = {  3.4,
                         5.3
                     };
 
-float feeds[50] = { 6.0,
+double feeds[7] = { 6.0,
                     7.0,
                     9.0,
                     12.0,

@@ -37,8 +37,13 @@ float feed = 0;
 
 int BOOT_DELAY = 30;
 
+// For curve fitting
+  int order = 2;
+  double coeffs[3];
+
 
 void setup() {
+
   Serial.begin(115200);
 
   // Init rolling average array to 0
@@ -56,6 +61,10 @@ void setup() {
 
   ld.clear();
   delay(BOOT_DELAY);
+
+
+  // FOR TESTING!!!111 REMOVE WHEN DONE
+  fitCurveToData();
 }
 
 void loop() {
@@ -72,13 +81,13 @@ void loop() {
   }
 
   // CALCULATE THE VOLTAGE
-  voltage = map(filtered_avg, 10, 1010, 0, 100) / 10.0;
-  if (voltage > 10.0) {
-    voltage = 10.0;
+  voltage = map(filtered_avg, 10, 1010, 30, 55) / 10.0;
+  if (voltage > 5.5) {
+    voltage = 5.5;
   }
 
-  if (voltage < 0.0) {
-    voltage = 0.0;
+  if (voltage < 3.0) {
+    voltage = 3.0;
   }
 
 
@@ -150,7 +159,7 @@ void updateDisplay(float voltage, float feed) {
 }
 
 float calculateFeed(float voltage) {
-  return voltage * 1.8;
+  return coeffs[0] * pow(voltage, 2) + coeffs[1] * voltage + coeffs[2];
 }
 
 int rollingAverage(const int analog_input_pin) {
@@ -171,6 +180,15 @@ int rollingAverage(const int analog_input_pin) {
 
   // calculate the average:
   return total/numReadings;
+}
+
+void fitCurveToData() {
+  int fit_return_value = fitCurve(order, sizeof(voltages)/sizeof(double), voltages, feeds, sizeof(coeffs)/sizeof(double), coeffs);
+
+  Serial.println(fit_return_value);
+  Serial.println(coeffs[0]);
+  Serial.println(coeffs[1]);
+  Serial.println(coeffs[2]);
 }
 
 void bootAnimation(int delay_ms) {
