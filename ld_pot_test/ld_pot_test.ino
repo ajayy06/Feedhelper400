@@ -38,8 +38,14 @@ float feed = 0;
 int BOOT_DELAY = 30;
 
 // For curve fitting
-  int order = 2;
-  double coeffs[3];
+int order = 2;
+double coeffs[3];
+
+// Maximum values
+float MAX_VOLTAGE = 10.0;
+float MAX_FEED = 18.0;
+float disp_max_voltage = 0;
+float disp_min_voltage = 0;
 
 
 void setup() {
@@ -80,14 +86,17 @@ void loop() {
     filtered_avg = avg_ub;
   }
 
-  // CALCULATE THE VOLTAGE
-  voltage = map(filtered_avg, 10, 1010, 30, 55) / 10.0;
-  if (voltage > 5.5) {
-    voltage = 5.5;
+  // DISPLAYED VOLTAGE
+  int int_min_voltage = disp_min_voltage * 10;
+  int int_max_voltage = disp_max_voltage * 10;
+
+  voltage = map(filtered_avg, 10, 1010, int_min_voltage, int_max_voltage) / 10.0;
+  if (voltage > disp_max_voltage) {
+    voltage = disp_max_voltage;
   }
 
-  if (voltage < 3.0) {
-    voltage = 3.0;
+  if (voltage < disp_min_voltage) {
+    voltage = disp_min_voltage;
   }
 
 
@@ -184,6 +193,36 @@ int rollingAverage(const int analog_input_pin) {
 
 void fitCurveToData() {
   int fit_return_value = fitCurve(order, sizeof(voltages)/sizeof(double), voltages, feeds, sizeof(coeffs)/sizeof(double), coeffs);
+
+  float A = coeffs[0];
+  float B = coeffs[1];
+  float C = coeffs[2];
+  float C_eqn1 = C - MAX_FEED;
+
+  // Solve equation fit == MAX_FEED
+  // --> Get the voltage with maximum feed
+  disp_max_voltage = (-B + sqrt(pow(B, 2) - 4 * A * C_eqn1))/(2*A);
+
+  // Get an approximate of the function min value.
+  // The fit is probably inaccurate with values near the min....
+  float tmp_feed = 100;
+  float min_feed = 100;
+
+  for (int i = 0; i < disp_max_voltage * 10; i++) {
+    tmp_feed = calculateFeed(i / 10.0);
+    if (tmp_feed < min_feed) {
+      min_feed = tmp_feed;
+    }
+  }
+
+  // If this happens, the fit might be wrong...
+  if (min_feed < 0) {
+    min_feed = 0;
+  }
+
+  float C_eqn2 = C - min_feed;
+
+  disp_min_voltage = (-B + sqrt(pow(B, 2) - 4 * A * C_eqn2))/(2*A);
 
   Serial.println(fit_return_value);
   Serial.println(coeffs[0]);
