@@ -49,7 +49,7 @@ void setup() {
   for (int thisReading = 0; thisReading < numReadings; thisReading++) {
     readings[thisReading] = 0;
   }
-
+  data.fitCurveToData();
   display.bootAnimation(BOOT_DELAY);
 }
 
@@ -71,8 +71,8 @@ void loop() {
   int int_max_voltage = data.getMaxDispVoltageInt();
 
   voltage = map(filtered_avg, 10, 1010, int_min_voltage, int_max_voltage) / 10.0;
-  if (voltage > int_min_voltage / 10.0) {
-    voltage = int_min_voltage / 10.0;
+  if (voltage > int_max_voltage / 10.0) {
+    voltage = int_max_voltage / 10.0;
   }
 
   if (voltage < int_min_voltage / 10.0) {

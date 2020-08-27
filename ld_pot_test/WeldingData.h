@@ -19,8 +19,8 @@ class WeldingData
         int getMaxDispVoltageInt();
         float getFeed(float voltage);
         void initEEPROM();
-    private:
         void fitCurveToData();
+    private:
         void writeInitialData();
         int data_points_;
         float min_displayed_voltage_;
