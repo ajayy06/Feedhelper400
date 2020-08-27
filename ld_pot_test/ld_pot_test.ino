@@ -2,17 +2,13 @@
 // Uses DigitLedDisplay library
 
 #include "LedDisplayDriver.h"
-#include "curveFitting.h"
-
-#include "initial_data.h"
+#include "WeldingData.h"
 
 // Pins
-int voltage_pot_pin = 7;
-int CLK = 5;
-int CS = 6;
-int DIN = 7;
-
-LedDisplayDriver display = LedDisplayDriver(DIN, CS, CLK);
+const int voltage_pot_pin = 7;
+const int CLK = 5;
+const int CS = 6;
+const int DIN = 7;
 
 // For rolling avg
 const int numReadings = 20;
@@ -36,20 +32,18 @@ float feed = 0;
 
 int BOOT_DELAY = 30;
 
-// For curve fitting
-int order = 2;
-double coeffs[3];
-
-// Maximum values
-float MAX_VOLTAGE = 10.0;
-float MAX_FEED = 18.0;
-float disp_max_voltage = 0;
-float disp_min_voltage = 0;
+LedDisplayDriver display = LedDisplayDriver(DIN, CS, CLK);
+WeldingData data = WeldingData();
 
 
 void setup() {
-
   Serial.begin(115200);
+  pinMode(12, INPUT_PULLUP);
+  if (digitalRead(12) == LOW) {
+    EEPROM.write(1000, 'R');
+  }
+
+  data.initEEPROM();
 
   // Init rolling average array to 0
   for (int thisReading = 0; thisReading < numReadings; thisReading++) {
@@ -57,10 +51,6 @@ void setup() {
   }
 
   display.bootAnimation(BOOT_DELAY);
-
-
-  // FOR TESTING!!!111 REMOVE WHEN DONE???
-  fitCurveToData();
 }
 
 void loop() {
@@ -77,31 +67,29 @@ void loop() {
   }
 
   // DISPLAYED VOLTAGE
-  int int_min_voltage = disp_min_voltage * 10;
-  int int_max_voltage = disp_max_voltage * 10;
+  int int_min_voltage = data.getMinDispVoltageInt();
+  int int_max_voltage = data.getMaxDispVoltageInt();
 
   voltage = map(filtered_avg, 10, 1010, int_min_voltage, int_max_voltage) / 10.0;
-  if (voltage > disp_max_voltage) {
-    voltage = disp_max_voltage;
+  if (voltage > int_min_voltage / 10.0) {
+    voltage = int_min_voltage / 10.0;
   }
 
-  if (voltage < disp_min_voltage) {
-    voltage = disp_min_voltage;
+  if (voltage < int_min_voltage / 10.0) {
+    voltage = int_min_voltage / 10.0;
   }
 
 
   if (delay_time > 20 && voltage != old_voltage) {
     old_voltage = voltage;
-    feed = calculateFeed(voltage);
+    feed = data.getFeed(voltage);
+    Serial.print("voltage: ");
+    Serial.println(voltage);
     display.displayValues(voltage, feed);
     delay_time = 0;
   }
   delay_time++;
   delay(1);
-}
-
-float calculateFeed(float voltage) {
-  return coeffs[0] * pow(voltage, 2) + coeffs[1] * voltage + coeffs[2];
 }
 
 int rollingAverage(const int analog_input_pin) {
@@ -122,43 +110,4 @@ int rollingAverage(const int analog_input_pin) {
 
   // calculate the average:
   return total/numReadings;
-}
-
-void fitCurveToData() {
-  int fit_return_value = fitCurve(order, sizeof(voltages)/sizeof(double), voltages, feeds, sizeof(coeffs)/sizeof(double), coeffs);
-
-  float A = coeffs[0];
-  float B = coeffs[1];
-  float C = coeffs[2];
-  float C_eqn1 = C - MAX_FEED;
-
-  // Solve equation fit == MAX_FEED
-  // --> Get the voltage with maximum feed
-  disp_max_voltage = (-B + sqrt(pow(B, 2) - 4 * A * C_eqn1))/(2*A);
-
-  // Get an approximate of the function min value.
-  // The fit is probably inaccurate with values near the min....
-  float tmp_feed = 100;
-  float min_feed = 100;
-
-  for (int i = 0; i < disp_max_voltage * 10; i++) {
-    tmp_feed = calculateFeed(i / 10.0);
-    if (tmp_feed < min_feed) {
-      min_feed = tmp_feed;
-    }
-  }
-
-  // If this happens, the fit might be wrong...
-  if (min_feed < 0) {
-    min_feed = 0;
-  }
-
-  float C_eqn2 = C - min_feed;
-
-  disp_min_voltage = (-B + sqrt(pow(B, 2) - 4 * A * C_eqn2))/(2*A);
-
-  Serial.println(fit_return_value);
-  Serial.println(coeffs[0]);
-  Serial.println(coeffs[1]);
-  Serial.println(coeffs[2]);
 }
