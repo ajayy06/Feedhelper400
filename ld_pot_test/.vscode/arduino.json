@@ -1,8 +1,0 @@
-{
-    "board": "arduino:avr:nano",
-    "configuration": "cpu=atmega328",
-    "programmer": "AVRISP mkII",
-    "port": "COM3",
-    "sketch": "ld_pot_test.ino",
-    "output": "../build"
-}
