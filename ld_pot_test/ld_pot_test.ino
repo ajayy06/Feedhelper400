@@ -11,18 +11,6 @@ const int CLK = 5;
 const int CS = 6;
 const int DIN = 7;
 
-// For rolling avg
-const int numReadings = 20;
-int readings[numReadings];      // the readings from the analog input
-int readIndex = 0;              // the index of the current reading
-uint32_t total = 0;             // the running total
-int average = 0;                // the average
-
-// For hysteresis
-int avg_ub = 0;
-int avg_lb = 0;
-int filtered_avg;
-
 // Additional optimization variables
 uint8_t delay_time = 0;
 float old_voltage = 10.1;
@@ -54,19 +42,6 @@ void setup() {
 }
 
 void loop() {
-  /*
-  average = rollingAverage(voltage_pot_pin);
-
-  // -HYSTERESIS
-  avg_ub = average + 10;
-  avg_lb = average - 10;
-
-  if (filtered_avg < avg_lb) {
-    filtered_avg = avg_lb;
-  } else if (filtered_avg > avg_ub) {
-    filtered_avg = avg_ub;
-  }
-  */
 
   // DISPLAYED VOLTAGE
   int int_min_voltage = data.getMinDispVoltageInt();
@@ -74,7 +49,7 @@ void loop() {
 
   int voltage_pot_value = voltage_pot.readValue();
 
-  voltage = map(filtered_avg, 10, 1010, int_min_voltage, int_max_voltage) / 10.0;
+  voltage = map(voltage_pot_value, 10, 1010, int_min_voltage, int_max_voltage) / 10.0;
   if (voltage > int_max_voltage / 10.0) {
     voltage = int_max_voltage / 10.0;
   }
@@ -94,28 +69,4 @@ void loop() {
   }
   delay_time++;
   delay(1);
-}
-
-int rollingAverage(const int analog_input_pin) {
-  // subtract the last reading:
-  total = total - readings[readIndex];
-  // read from the sensor:
-  readings[readIndex] = analogRead(analog_input_pin);
-  // add the reading to the total:
-  total = total + readings[readIndex];
-  // advance to the next position in the array:
-  readIndex = readIndex + 1;
-
-  // if we're at the end of the array...
-  if (readIndex >= numReadings) {
-    // ...wrap around to the beginning:
-    readIndex = 0;
-  }
-
-  // calculate the average:
-  return total/numReadings;
-}
-
-int readPotValue(const int pin) {
-
 }

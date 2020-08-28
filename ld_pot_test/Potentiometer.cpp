@@ -48,6 +48,5 @@ void Potentiometer::hysteresis(int amount) {
 int Potentiometer::readValue() {
     average_ = rollingAverage();
     hysteresis(HYSTERESIS_AMOUNT);
-
     return filtered_avg_;
 }
