@@ -3,9 +3,10 @@
 
 #include "LedDisplayDriver.h"
 #include "WeldingData.h"
+#include "Potentiometer.h"
 
 // Pins
-const int voltage_pot_pin = 7;
+const int voltage_pot_pin = A7;
 const int CLK = 5;
 const int CS = 6;
 const int DIN = 7;
@@ -39,16 +40,14 @@ WeldingData data = WeldingData();
 void setup() {
   Serial.begin(115200);
   pinMode(12, INPUT_PULLUP);
+  pinMode(voltage_pot_pin, INPUT);
+
   if (digitalRead(12) == LOW) {
     EEPROM.write(1000, 'R');
   }
 
   data.initEEPROM();
 
-  // Init rolling average array to 0
-  for (int thisReading = 0; thisReading < numReadings; thisReading++) {
-    readings[thisReading] = 0;
-  }
   data.fitCurveToData();
   display.bootAnimation(BOOT_DELAY);
 }
@@ -110,4 +109,8 @@ int rollingAverage(const int analog_input_pin) {
 
   // calculate the average:
   return total/numReadings;
+}
+
+int readPotValue(const int pin) {
+
 }
