@@ -35,6 +35,7 @@ int BOOT_DELAY = 30;
 
 LedDisplayDriver display = LedDisplayDriver(DIN, CS, CLK);
 WeldingData data = WeldingData();
+Potentiometer voltage_pot = Potentiometer(voltage_pot_pin);
 
 
 void setup() {
@@ -53,6 +54,7 @@ void setup() {
 }
 
 void loop() {
+  /*
   average = rollingAverage(voltage_pot_pin);
 
   // -HYSTERESIS
@@ -64,10 +66,13 @@ void loop() {
   } else if (filtered_avg > avg_ub) {
     filtered_avg = avg_ub;
   }
+  */
 
   // DISPLAYED VOLTAGE
   int int_min_voltage = data.getMinDispVoltageInt();
   int int_max_voltage = data.getMaxDispVoltageInt();
+
+  int voltage_pot_value = voltage_pot.readValue();
 
   voltage = map(filtered_avg, 10, 1010, int_min_voltage, int_max_voltage) / 10.0;
   if (voltage > int_max_voltage / 10.0) {
