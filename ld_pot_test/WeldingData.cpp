@@ -103,7 +103,7 @@ void WeldingData::writeInitialData() {
         EEPROM.write(i, 0);
     }
 
-    data_points_ = 7;
+    data_points_ = sizeof(initial_voltages) / sizeof(double);
     for (int i = 0; i < data_points_; i++) {
         int eeprom_addr = (i + 1) * sizeof(double);
         Serial.println("Writing to EEPROM...");
