@@ -6,8 +6,13 @@ WeldingData::WeldingData():
     max_displayed_voltage_(0) {
 }
 
-void WeldingData::addValues(float voltage, float feed) {
-    // TODO
+void WeldingData::addValues(double voltage, double feed) {
+    data_points_++;  // Data point validity check missing!!
+    EEPROM.write(0, data_points_);
+
+    int eeprom_addr = data_points_ * sizeof(double);
+    EEPROM.put(eeprom_addr, voltage);
+    EEPROM.put(eeprom_addr + MAX_STORED_VALUES * sizeof(double), feed);
 }
 
 int WeldingData::getMinDispVoltageInt() {
@@ -111,8 +116,8 @@ void WeldingData::writeInitialData() {
         EEPROM.put(eeprom_addr + MAX_STORED_VALUES * sizeof(double), initial_feeds[i]); // addresses 4 + MAX_STORED_VALUES to that + MAX_STORED_VALUES
     }
 
-    EEPROM.write(1000, 'I');
-    EEPROM.write(0, data_points_);
+    EEPROM.write(1000, 'I');  // Unset reset flag
+    EEPROM.write(0, data_points_);  // Number of data points is stored in the beginning
 }
 
 float WeldingData::getFeed(float voltage) {

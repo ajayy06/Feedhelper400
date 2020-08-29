@@ -28,16 +28,20 @@ Potentiometer voltage_pot = Potentiometer(voltage_pot_pin);
 
 void setup() {
   Serial.begin(115200);
+
   pinMode(12, INPUT_PULLUP);
+  pinMode(2, INPUT_PULLUP);
   pinMode(voltage_pot_pin, INPUT);
+
+  attachInterrupt(digitalPinToInterrupt(2), inputValue, FALLING);
 
   if (digitalRead(12) == LOW) {
     EEPROM.write(1000, 'R');
   }
 
   data.initEEPROM();
-
   data.fitCurveToData();
+
   display.bootAnimation(BOOT_DELAY);
 }
 
@@ -69,4 +73,8 @@ void loop() {
   }
   delay_time++;
   delay(1);
+}
+
+void inputValue() {
+  Serial.println("Interrupt triggered, inputValue called :)");
 }

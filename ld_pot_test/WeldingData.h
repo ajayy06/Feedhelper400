@@ -4,7 +4,7 @@
 #include "curveFitting.h"
 #include "EEPROM.h"
 
-const int MAX_STORED_VALUES = 30;
+const int MAX_STORED_VALUES = 30;  // Don't go much over 100 - might stop working :D
 
 // Maximum values
 const float MAX_VOLTAGE = 10.0;
@@ -14,7 +14,7 @@ class WeldingData
 {
     public:
         WeldingData();
-        void addValues(float voltage, float feed);
+        void addValues(double voltage, double feed);
         int getMinDispVoltageInt();
         int getMaxDispVoltageInt();
         float getFeed(float voltage);
