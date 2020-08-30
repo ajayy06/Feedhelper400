@@ -18,15 +18,16 @@ const int DIN = 7;
 
 // Additional optimization variables
 uint8_t delay_time = 0;
-float old_voltage = 10.1;
+double old_voltage = 10.1;
+double old_feed = 18.1;
 
 volatile bool button_pressed = false;
 unsigned button_cooldown = 20;
 unsigned release_cooldown = 20;
 
 // Final parameters
-float voltage = 0;
-float feed = 0;
+double voltage = 0;
+double feed = 0;
 
 int BOOT_DELAY = 30;
 
@@ -82,8 +83,9 @@ void loop() {
   }
 
 
-  if (delay_time > 20 && voltage != old_voltage) {
+  if (delay_time > 20 && (voltage != old_voltage || feed != old_feed)) {
     old_voltage = voltage;
+    old_feed = feed;
     feed = data.getFeed(voltage);
     Serial.print("voltage: ");
     Serial.println(voltage);
@@ -147,12 +149,6 @@ void savingMode() {
       }
       stopwatch = 0;
     }
-    
-    if (button_pressed) {  // Exit saving mode if button is pressed again
-      button_pressed = false;
-      display.setDisplayBrightness(10);
-      break;
-    }
 
     if (voltage_to_save != prev_voltage || feed_to_save != prev_feed) {
       display.displayValues(voltage_to_save, feed_to_save);
@@ -162,8 +158,15 @@ void savingMode() {
 
     voltage_to_save = map(voltage_pot.readValue(), 10, 1010, 0, 100) / 10.0;
     feed_to_save = map(feed_pot.readValue(), 10, 1010, 0, 180) / 10.0;
+
+    if (button_pressed) {  // Exit saving mode if button is pressed again
+      button_pressed = false;
+      display.setDisplayBrightness(10);
+      break;
+    }
   }
 
-  display.displayValues(voltage, feed);
+  data.addValues(voltage_to_save, feed_to_save);
+  data.fitCurveToData();
   // Exit the saving mode
 }
