@@ -22,7 +22,7 @@ void LedDisplayDriver::displayDigit(byte address, int val, bool decimalpoint) {
 	ld_.write(address, tableValue);
 }
 
-void LedDisplayDriver::displayValues(float voltage, float feed) {
+void LedDisplayDriver::displayValues(double voltage, double feed) {
     int voltage_int = voltage * 10;
     int feed_int = feed * 10;
     ld_.clear();
@@ -104,4 +104,8 @@ void LedDisplayDriver::bootAnimation(int delay_ms) {
     ld_.write(1, B00110000);
     delay(delay_ms);
     ld_.clear();
+}
+
+void LedDisplayDriver::setDisplayBrightness(int brightness) {
+    ld_.setBright(brightness);
 }

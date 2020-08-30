@@ -15,6 +15,10 @@ class WeldingData
     public:
         WeldingData();
         void addValues(double voltage, double feed);
+        /**
+         * \brief Get minimum displayed voltage
+         * \return Minimum voltage to display as int, multiplied by 10
+         **/
         int getMinDispVoltageInt();
         int getMaxDispVoltageInt();
         float getFeed(float voltage);

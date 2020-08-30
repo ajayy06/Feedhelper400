@@ -5,7 +5,12 @@
 #include "WeldingData.h"
 #include "Potentiometer.h"
 
+#include <elapsedMillis.h>
+
+const int COOLDOWN_AMOUNT = 20;
+
 // Pins
+const int feed_pot_pin = A6;
 const int voltage_pot_pin = A7;
 const int CLK = 5;
 const int CS = 6;
@@ -14,6 +19,10 @@ const int DIN = 7;
 // Additional optimization variables
 uint8_t delay_time = 0;
 float old_voltage = 10.1;
+
+volatile bool button_pressed = false;
+unsigned button_cooldown = 20;
+unsigned release_cooldown = 20;
 
 // Final parameters
 float voltage = 0;
@@ -24,6 +33,7 @@ int BOOT_DELAY = 30;
 LedDisplayDriver display = LedDisplayDriver(DIN, CS, CLK);
 WeldingData data = WeldingData();
 Potentiometer voltage_pot = Potentiometer(voltage_pot_pin);
+Potentiometer feed_pot = Potentiometer(feed_pot_pin);
 
 
 void setup() {
@@ -32,6 +42,7 @@ void setup() {
   pinMode(12, INPUT_PULLUP);
   pinMode(2, INPUT_PULLUP);
   pinMode(voltage_pot_pin, INPUT);
+  pinMode(feed_pot_pin, INPUT);
 
   attachInterrupt(digitalPinToInterrupt(2), inputValue, FALLING);
 
@@ -46,6 +57,14 @@ void setup() {
 }
 
 void loop() {
+
+  incrementCooldowns();
+
+
+  if (button_pressed) {  // Enter saving mode
+    savingMode();
+  }
+
 
   // DISPLAYED VOLTAGE
   int int_min_voltage = data.getMinDispVoltageInt();
@@ -76,5 +95,75 @@ void loop() {
 }
 
 void inputValue() {
-  Serial.println("Interrupt triggered, inputValue called :)");
+  if (button_cooldown < COOLDOWN_AMOUNT || release_cooldown < COOLDOWN_AMOUNT) {
+    return;
+  }
+
+  button_cooldown = 0;
+  Serial.println("Interrupt trigggggerereddddd");
+  button_pressed = true;
+}
+
+void incrementCooldowns() {
+  // ==========  BUTTON COOLDOWN S***  ==========
+  if (button_cooldown < COOLDOWN_AMOUNT) {
+    button_cooldown++;
+  }
+  if (digitalRead(2) == LOW) {
+    release_cooldown = 0;
+  } else {
+    if (release_cooldown < COOLDOWN_AMOUNT) {
+      release_cooldown++;
+    }
+  }
+  // ==========  /BUTTON COOLDOWN S*** ==========
+}
+
+void savingMode() {
+  button_pressed = false;
+
+  elapsedMillis stopwatch;
+  stopwatch = 0;
+  display.setDisplayBrightness(1);
+  bool dim = true;
+
+  double voltage_to_save = voltage;
+  double feed_to_save = feed;
+
+  double prev_voltage = voltage;
+  double prev_feed = feed;
+
+  while ( true ) {  // Saving mode loop
+    incrementCooldowns();
+
+    // Flashing the brightness
+    if (stopwatch > 500) {
+      if (dim) {
+        display.setDisplayBrightness(10);
+        dim = false;
+      } else {
+        display.setDisplayBrightness(1);
+        dim = true;
+      }
+      stopwatch = 0;
+    }
+    
+    if (button_pressed) {  // Exit saving mode if button is pressed again
+      button_pressed = false;
+      display.setDisplayBrightness(10);
+      break;
+    }
+
+    if (voltage_to_save != prev_voltage || feed_to_save != prev_feed) {
+      display.displayValues(voltage_to_save, feed_to_save);
+      prev_voltage = voltage_to_save;
+      prev_feed = feed_to_save;
+    }
+
+    voltage_to_save = map(voltage_pot.readValue(), 10, 1010, 0, 100) / 10.0;
+    feed_to_save = map(feed_pot.readValue(), 10, 1010, 0, 180) / 10.0;
+  }
+
+  display.displayValues(voltage, feed);
+  // Exit the saving mode
 }
