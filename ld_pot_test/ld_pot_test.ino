@@ -3,74 +3,77 @@
 
 #include "LedDisplayDriver.h"
 #include "WeldingData.h"
+#include "Potentiometer.h"
+
+#include <elapsedMillis.h>
+
+const int COOLDOWN_AMOUNT = 20;
 
 // Pins
-const int voltage_pot_pin = 7;
+const int feed_pot_pin = A6;
+const int voltage_pot_pin = A7;
 const int CLK = 5;
 const int CS = 6;
 const int DIN = 7;
 
-// For rolling avg
-const int numReadings = 20;
-int readings[numReadings];      // the readings from the analog input
-int readIndex = 0;              // the index of the current reading
-uint32_t total = 0;             // the running total
-int average = 0;                // the average
-
-// For hysteresis
-int avg_ub = 0;
-int avg_lb = 0;
-int filtered_avg;
-
 // Additional optimization variables
 uint8_t delay_time = 0;
-float old_voltage = 10.1;
+double old_voltage = 10.1;
+double old_feed = 18.1;
+
+volatile bool button_pressed = false;
+unsigned button_cooldown = 20;
+unsigned release_cooldown = 20;
 
 // Final parameters
-float voltage = 0;
-float feed = 0;
+double voltage = 0;
+double feed = 0;
 
 int BOOT_DELAY = 30;
 
 LedDisplayDriver display = LedDisplayDriver(DIN, CS, CLK);
 WeldingData data = WeldingData();
+Potentiometer voltage_pot = Potentiometer(voltage_pot_pin);
+Potentiometer feed_pot = Potentiometer(feed_pot_pin);
 
 
 void setup() {
   Serial.begin(115200);
+
   pinMode(12, INPUT_PULLUP);
+  pinMode(2, INPUT_PULLUP);
+  pinMode(voltage_pot_pin, INPUT);
+  pinMode(feed_pot_pin, INPUT);
+
+  attachInterrupt(digitalPinToInterrupt(2), inputValue, FALLING);
+
   if (digitalRead(12) == LOW) {
     EEPROM.write(1000, 'R');
   }
 
   data.initEEPROM();
-
-  // Init rolling average array to 0
-  for (int thisReading = 0; thisReading < numReadings; thisReading++) {
-    readings[thisReading] = 0;
-  }
   data.fitCurveToData();
+
   display.bootAnimation(BOOT_DELAY);
 }
 
 void loop() {
-  average = rollingAverage(voltage_pot_pin);
 
-  // -HYSTERESIS
-  avg_ub = average + 10;
-  avg_lb = average - 10;
+  incrementCooldowns();
 
-  if (filtered_avg < avg_lb) {
-    filtered_avg = avg_lb;
-  } else if (filtered_avg > avg_ub) {
-    filtered_avg = avg_ub;
+
+  if (button_pressed) {  // Enter saving mode
+    savingMode();
   }
+
 
   // DISPLAYED VOLTAGE
   int int_min_voltage = data.getMinDispVoltageInt();
   int int_max_voltage = data.getMaxDispVoltageInt();
 
-  voltage = map(filtered_avg, 10, 1010, int_min_voltage, int_max_voltage) / 10.0;
+  int voltage_pot_value = voltage_pot.readValue();
+
+  voltage = map(voltage_pot_value, 10, 1010, int_min_voltage, int_max_voltage) / 10.0;
   if (voltage > int_max_voltage / 10.0) {
     voltage = int_max_voltage / 10.0;
   }
@@ -80,8 +83,9 @@ void loop() {
   }
 
 
-  if (delay_time > 20 && voltage != old_voltage) {
+  if (delay_time > 20 && (voltage != old_voltage || feed != old_feed)) {
     old_voltage = voltage;
+    old_feed = feed;
     feed = data.getFeed(voltage);
     Serial.print("voltage: ");
     Serial.println(voltage);
@@ -92,22 +96,77 @@ void loop() {
   delay(1);
 }
 
-int rollingAverage(const int analog_input_pin) {
-  // subtract the last reading:
-  total = total - readings[readIndex];
-  // read from the sensor:
-  readings[readIndex] = analogRead(analog_input_pin);
-  // add the reading to the total:
-  total = total + readings[readIndex];
-  // advance to the next position in the array:
-  readIndex = readIndex + 1;
-
-  // if we're at the end of the array...
-  if (readIndex >= numReadings) {
-    // ...wrap around to the beginning:
-    readIndex = 0;
+void inputValue() {
+  if (button_cooldown < COOLDOWN_AMOUNT || release_cooldown < COOLDOWN_AMOUNT) {
+    return;
   }
 
-  // calculate the average:
-  return total/numReadings;
+  button_cooldown = 0;
+  Serial.println("Interrupt trigggggerereddddd");
+  button_pressed = true;
+}
+
+void incrementCooldowns() {
+  // ==========  BUTTON COOLDOWN S***  ==========
+  if (button_cooldown < COOLDOWN_AMOUNT) {
+    button_cooldown++;
+  }
+  if (digitalRead(2) == LOW) {
+    release_cooldown = 0;
+  } else {
+    if (release_cooldown < COOLDOWN_AMOUNT) {
+      release_cooldown++;
+    }
+  }
+  // ==========  /BUTTON COOLDOWN S*** ==========
+}
+
+void savingMode() {
+  button_pressed = false;
+
+  elapsedMillis stopwatch;
+  stopwatch = 0;
+  display.setDisplayBrightness(1);
+  bool dim = true;
+
+  double voltage_to_save = voltage;
+  double feed_to_save = feed;
+
+  double prev_voltage = voltage;
+  double prev_feed = feed;
+
+  while ( true ) {  // Saving mode loop
+    incrementCooldowns();
+
+    // Flashing the brightness
+    if (stopwatch > 500) {
+      if (dim) {
+        display.setDisplayBrightness(10);
+        dim = false;
+      } else {
+        display.setDisplayBrightness(1);
+        dim = true;
+      }
+      stopwatch = 0;
+    }
+
+    if (voltage_to_save != prev_voltage || feed_to_save != prev_feed) {
+      display.displayValues(voltage_to_save, feed_to_save);
+      prev_voltage = voltage_to_save;
+      prev_feed = feed_to_save;
+    }
+
+    voltage_to_save = map(voltage_pot.readValue(), 10, 1010, 0, 100) / 10.0;
+    feed_to_save = map(feed_pot.readValue(), 10, 1010, 0, 180) / 10.0;
+
+    if (button_pressed) {  // Exit saving mode if button is pressed again
+      button_pressed = false;
+      display.setDisplayBrightness(10);
+      break;
+    }
+  }
+
+  data.addValues(voltage_to_save, feed_to_save);
+  data.fitCurveToData();
+  // Exit the saving mode
 }
