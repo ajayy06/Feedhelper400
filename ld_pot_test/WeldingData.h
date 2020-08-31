@@ -21,14 +21,15 @@ class WeldingData
          **/
         int getMinDispVoltageInt();
         int getMaxDispVoltageInt();
-        float getFeed(float voltage);
+        double getFeed(double voltage);
         void initEEPROM();
         void fitCurveToData();
     private:
         void writeInitialData();
+        double solveSecondDegreeNumeric(double y_value);
         int data_points_;
-        float min_displayed_voltage_;
-        float max_displayed_voltage_;
+        double min_displayed_voltage_;
+        double max_displayed_voltage_;
         double coeffs_[3];
 };
 
