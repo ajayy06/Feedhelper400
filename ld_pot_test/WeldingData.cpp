@@ -30,23 +30,19 @@ void WeldingData::fitCurveToData() {
     double voltages[data_points_];
     double feeds[data_points_];
 
+    // Read data from EEPROM
     for (int i = 0; i < data_points_; i++) {
         int eeprom_addr = (i + 1) * sizeof(double);
         EEPROM.get(eeprom_addr, voltages[i]);
         EEPROM.get(eeprom_addr + MAX_STORED_VALUES * sizeof(double), feeds[i]);
     }
 
+    // Get the fit coefficients with fitCurve library
     int fit_return_value = fitCurve(2, data_points_, voltages, feeds, sizeof(coeffs_)/sizeof(double), coeffs_);
-
-    double A = coeffs_[0];  // ok
-    double B = coeffs_[1];
-    double C = coeffs_[2];
-    double C_eqn1 = C - MAX_FEED;
 
 
     // Solve equation fit == MAX_FEED
     // --> Get the voltage with maximum feed
-    //max_displayed_voltage_ = (-B + sqrt(pow(B, 2) - 4 * A * C_eqn1))/(2*A);
     max_displayed_voltage_ = solveSecondDegreeNumeric(MAX_FEED);
 
     Serial.print("maximum displayed voltage = ");
@@ -72,9 +68,8 @@ void WeldingData::fitCurveToData() {
         min_feed = 0;
     }
 
-    float C_eqn2 = C - min_feed;
-
-    //min_displayed_voltage_ = (-B + sqrt(pow(B, 2) - 4 * A * C_eqn2))/(2*A);
+    // Solve equation fit == min_feed
+    // --> Get the voltage with minimum feed
     min_displayed_voltage_ = solveSecondDegreeNumeric(min_feed);
 
     Serial.print("minimum displayed voltage = ");
@@ -87,6 +82,8 @@ void WeldingData::fitCurveToData() {
     Serial.print("constant coefficient: ");
     Serial.println(coeffs_[2]);
 }
+
+
 
 void WeldingData::writeInitialData() {
     double initial_voltages[7] = {  3.4,
@@ -114,6 +111,7 @@ void WeldingData::writeInitialData() {
     }
 
     data_points_ = sizeof(initial_voltages) / sizeof(double);
+    
     for (int i = 0; i < data_points_; i++) {
         int eeprom_addr = (i + 1) * sizeof(double);
         Serial.println("Writing to EEPROM...");
@@ -145,9 +143,7 @@ double WeldingData::solveSecondDegreeNumeric(double y_value) {
         current_val = getFeed(i);
         imprecision = abs(current_val - y_value);
         if (imprecision > prev_imprecision) {
-            Serial.print("i = ");
-            Serial.println(i);
-            Serial.print("imprecision = ");
+            Serial.print("Numeric solving imprecision = ");
             Serial.println(imprecision);
             break;
         } else {

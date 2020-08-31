@@ -7,8 +7,8 @@
 const int MAX_STORED_VALUES = 30;  // Don't go much over 100 - might stop working :D
 
 // Maximum values
-const float MAX_VOLTAGE = 10.0;
-const float MAX_FEED = 18.0;
+const double MAX_VOLTAGE = 10.0;
+const double MAX_FEED = 18.0;
 
 class WeldingData
 {
