@@ -1,0 +1,21 @@
+Feedhelper400 - TODO
+
+Osia:
+    - Pushbutton / momentary switch / painonappi valolla (rgb)
+    - Paristokotelo / vast.
+    - m4 ruuveja/muttereita tms
+    - Pikku ruuveja
+    - Työntömitta :)
+
+Koodi:
+    - Uusien syötettävien arvojen tarkistus (liian lähellä olemassa olevaa arvoa -> korvaa)
+    - Animaatioiden hionta
+    - Testaus!!!!!!!!
+    - Dokumentointi
+    - Refaktorointi
+
+Rauta:
+    - Kytkentäkaavion piirtäminen
+    - Kotelon/ komponenttien asettelun suunnittelu
+    - Kotelon mallinnus
+    - Kotelon tulostus
