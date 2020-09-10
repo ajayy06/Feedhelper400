@@ -1,6 +1,17 @@
 // 8 Digit, 7-segment display first test
 // Uses DigitLedDisplay library
 
+/**
+ * TODO:
+ * When exiting saving mode without saving and the v-pot position is changed,
+ * notSavedAnimation displays wrong values.
+ *  -> Make new function to update values and move crap from loop to there.
+ * 
+ * Remove delay_time as it probably is not needed anymore
+ * 
+ * Add negative value check to voltage and feed maps when in saving mode
+ */
+
 #include "LedDisplayDriver.h"
 #include "WeldingData.h"
 #include "Potentiometer.h"
