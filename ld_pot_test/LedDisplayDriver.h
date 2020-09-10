@@ -10,6 +10,10 @@ class LedDisplayDriver
         void bootAnimation(int delay_ms);
         void displayValues(double voltage, double feed);
         void setDisplayBrightness(int brightness);
+        void notSavedAnimation(int delay_ms);
+        void savedAnimation(int delay_ms);
+        void on();
+        void off();
     private:
         void displayDigit(byte address, int val, bool decimalpoint = false);
         DigitLedDisplay ld_;

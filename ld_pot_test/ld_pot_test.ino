@@ -31,6 +31,9 @@ double feed = 0;
 
 int BOOT_DELAY = 30;
 
+int CONFIRMATION_FLASH_CYCLES = 10;
+int SAVING_FLASH_CYCLES = 15;
+
 LedDisplayDriver display = LedDisplayDriver(DIN, CS, CLK);
 WeldingData data = WeldingData();
 Potentiometer voltage_pot = Potentiometer(voltage_pot_pin);
@@ -47,8 +50,8 @@ void setup() {
 
   attachInterrupt(digitalPinToInterrupt(2), inputValue, FALLING);
 
-  if (digitalRead(12) == LOW) {
-    EEPROM.write(1000, 'R');
+  if (digitalRead(12) == LOW) {  // Reset pin is connected to GND
+    EEPROM.write(1000, 'R'); // Set the ("R")eset flag
   }
 
   data.initEEPROM();
@@ -74,6 +77,7 @@ void loop() {
   int voltage_pot_value = voltage_pot.readValue();
 
   voltage = map(voltage_pot_value, 10, 1010, int_min_voltage, int_max_voltage) / 10.0;
+
   if (voltage > int_max_voltage / 10.0) {
     voltage = int_max_voltage / 10.0;
   }
@@ -87,8 +91,6 @@ void loop() {
     old_voltage = voltage;
     old_feed = feed;
     feed = data.getFeed(voltage);
-    Serial.print("voltage: ");
-    Serial.println(voltage);
     display.displayValues(voltage, feed);
     delay_time = 0;
   }
@@ -135,7 +137,9 @@ void savingMode() {
   double prev_voltage = voltage;
   double prev_feed = feed;
 
-  while ( true ) {  // Saving mode loop
+  bool saved;
+
+  for ( ;; ) {  // Saving mode loop
     incrementCooldowns();
 
     // Flashing the brightness
@@ -159,14 +163,61 @@ void savingMode() {
     voltage_to_save = map(voltage_pot.readValue(), 10, 1010, 0, 100) / 10.0;
     feed_to_save = map(feed_pot.readValue(), 10, 1010, 0, 180) / 10.0;
 
-    if (button_pressed) {  // Exit saving mode if button is pressed again
+    Serial.println(feed_to_save);
+
+    if (button_pressed) {  // Enter confirmation mode if button is pressed again
       button_pressed = false;
       display.setDisplayBrightness(10);
+      saved = confirmationMode(voltage_to_save, feed_to_save);
       break;
     }
   }
 
-  data.addValues(voltage_to_save, feed_to_save);
-  data.fitCurveToData();
+  display.displayValues(voltage, feed);
+
+  if (saved) {
+    display.savedAnimation(100);
+  } else {
+    display.notSavedAnimation(100);
+  }
+
   // Exit the saving mode
+}
+
+bool confirmationMode(double voltage_to_save, double feed_to_save) {
+  elapsedMillis stopwatch;
+  stopwatch = 0;
+  int cycles = 0;
+  bool off = false;
+
+  for ( ;; ) {  // confirmation mode loop
+    incrementCooldowns();
+
+    // Flashing the screen on and off
+    if (stopwatch > 200) {
+      if (off) {
+        display.on();
+        off = false;
+      } else {
+        display.off();
+        off = true;
+        cycles++;
+      }
+      stopwatch = 0;
+    }
+
+    if (cycles > CONFIRMATION_FLASH_CYCLES) {  // Exit without saving if not confirmed within x cycles
+      display.on();
+      return false;
+    }
+
+    if (button_pressed) {  // Save confirmed -> exit and actually save new values
+      display.on();
+      button_pressed = false;
+      data.addValues(voltage_to_save, feed_to_save);
+      data.fitCurveToData();
+      return true;
+    }
+
+  }
 }

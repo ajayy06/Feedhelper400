@@ -109,3 +109,35 @@ void LedDisplayDriver::bootAnimation(int delay_ms) {
 void LedDisplayDriver::setDisplayBrightness(int brightness) {
     ld_.setBright(brightness);
 }
+
+void LedDisplayDriver::on() {
+    ld_.on();
+}
+
+void LedDisplayDriver::off() {
+    ld_.off();
+}
+
+void LedDisplayDriver::notSavedAnimation(int delay_ms) {
+    ld_.off();
+    delay(800);
+    ld_.on();
+    for (int i = 0; i <= 10; i++) {
+        ld_.setBright(i);
+        delay(delay_ms);
+    }
+}
+
+void LedDisplayDriver::savedAnimation(int delay_ms) {
+    ld_.off();
+    delay(delay_ms + 500);
+    ld_.on();
+    delay(delay_ms);
+    ld_.off();
+    delay(delay_ms);
+    ld_.on();
+    delay(delay_ms);
+    ld_.off();
+    delay(delay_ms + 500);
+    ld_.on();
+}
