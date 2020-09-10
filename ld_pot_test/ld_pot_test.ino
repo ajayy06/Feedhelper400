@@ -3,13 +3,9 @@
 
 /**
  * TODO:
- * When exiting saving mode without saving and the v-pot position is changed,
- * notSavedAnimation displays wrong values.
- *  -> Make new function to update values and move crap from loop to there.
  * 
- * Remove delay_time as it probably is not needed anymore
- * 
- * Add negative value check to voltage and feed maps when in saving mode
+ * Test the s*** out of saving different values, check with matlab that the
+ * curve fitting does not piss in your morning cereal
  */
 
 #include "LedDisplayDriver.h"
@@ -80,8 +76,12 @@ void loop() {
     savingMode();
   }
 
+  followCurve(false);
 
-  // DISPLAYED VOLTAGE
+  delay(1);  // Stability
+}
+
+void followCurve(bool force) {
   int int_min_voltage = data.getMinDispVoltageInt();
   int int_max_voltage = data.getMaxDispVoltageInt();
 
@@ -98,18 +98,15 @@ void loop() {
   }
 
 
-  if (delay_time > 20 && (voltage != old_voltage || feed != old_feed)) {
+  if (voltage != old_voltage || feed != old_feed || force) {
     old_voltage = voltage;
     old_feed = feed;
     feed = data.getFeed(voltage);
     display.displayValues(voltage, feed);
-    delay_time = 0;
   }
-  delay_time++;
-  delay(1);
 }
 
-void inputValue() {
+void inputValue() {  // Innterrupt function
   if (button_cooldown < COOLDOWN_AMOUNT || release_cooldown < COOLDOWN_AMOUNT) {
     return;
   }
@@ -150,6 +147,8 @@ void savingMode() {
 
   bool saved;
 
+  int cycles = 0;
+
   for ( ;; ) {  // Saving mode loop
     incrementCooldowns();
 
@@ -161,18 +160,24 @@ void savingMode() {
       } else {
         display.setDisplayBrightness(1);
         dim = true;
+        cycles++;
       }
       stopwatch = 0;
     }
 
+    if (cycles > SAVING_FLASH_CYCLES) {  // Exit without saving if not confirmed within x cycles
+      break;
+    }
+
     if (voltage_to_save != prev_voltage || feed_to_save != prev_feed) {
+      cycles = 0;
       display.displayValues(voltage_to_save, feed_to_save);
       prev_voltage = voltage_to_save;
       prev_feed = feed_to_save;
     }
 
-    voltage_to_save = map(voltage_pot.readValue(), 10, 1010, 0, 100) / 10.0;
-    feed_to_save = map(feed_pot.readValue(), 10, 1010, 0, 180) / 10.0;
+    voltage_to_save = map(voltage_pot.readValue(), 5, 1010, 0, 100) / 10.0;
+    feed_to_save = map(feed_pot.readValue(), 5, 1010, 0, 180) / 10.0;
 
     Serial.println(feed_to_save);
 
@@ -184,7 +189,7 @@ void savingMode() {
     }
   }
 
-  display.displayValues(voltage, feed);
+  followCurve(true);
 
   if (saved) {
     display.savedAnimation(100);
