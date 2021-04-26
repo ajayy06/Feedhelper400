@@ -11,6 +11,7 @@
 #include "LedDisplayDriver.h"
 #include "WeldingData.h"
 #include "Potentiometer.h"
+#include "SavingLed.h"
 
 #include <elapsedMillis.h>
 
@@ -22,6 +23,10 @@ const int voltage_pot_pin = A7;
 const int CLK = 5;
 const int CS = 6;
 const int DIN = 7;
+
+const int RED = 9;
+const int GREEN = 3;
+const int BLUE = 10;
 
 // Additional optimization variables
 uint8_t delay_time = 0;
@@ -45,6 +50,7 @@ LedDisplayDriver display = LedDisplayDriver(DIN, CS, CLK);
 WeldingData data = WeldingData();
 Potentiometer voltage_pot = Potentiometer(voltage_pot_pin);
 Potentiometer feed_pot = Potentiometer(feed_pot_pin);
+SavingLed led = SavingLed(RED, GREEN, BLUE);
 
 
 void setup() {
@@ -132,6 +138,7 @@ void incrementCooldowns() {
 }
 
 void savingMode() {
+  led.TestRGB();
   button_pressed = false;
 
   elapsedMillis stopwatch;
