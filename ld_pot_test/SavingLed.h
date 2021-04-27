@@ -13,11 +13,16 @@ typedef struct Colour {
     int blue;
 } Colour;
 
+enum colourlist {LED_PURPLE, LED_RED, LED_GREEN, LED_YELLOW};
+
 class SavingLed
 {
     public:
         SavingLed(int r_pin, int g_pin, int b_pin);
         void TestRGB();
+        void ShowColour(colourlist colour_to_show);
+        void DimAnimation(int delay_ms);
+        void off();
     private:
 
         // colour pins
@@ -25,7 +30,11 @@ class SavingLed
         int g_;
         int b_;
 
-        void off();
+        // current values
+        int r_value_;
+        int g_value_;
+        int b_value_;
+
         
 };
 

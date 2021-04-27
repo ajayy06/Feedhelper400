@@ -138,7 +138,7 @@ void incrementCooldowns() {
 }
 
 void savingMode() {
-  led.TestRGB();
+  led.ShowColour(colourlist::LED_PURPLE);
   button_pressed = false;
 
   elapsedMillis stopwatch;
@@ -186,7 +186,7 @@ void savingMode() {
     voltage_to_save = map(voltage_pot.readValue(), 5, 1010, 0, 100) / 10.0;
     feed_to_save = map(feed_pot.readValue(), 5, 1010, 0, 180) / 10.0;
 
-    Serial.println(feed_to_save);
+    //Serial.println(feed_to_save);
 
     if (button_pressed) {  // Enter confirmation mode if button is pressed again
       button_pressed = false;
@@ -199,9 +199,9 @@ void savingMode() {
   followCurve(true);
 
   if (saved) {
-    display.savedAnimation(100);
+    display.savedAnimation(100, &led);
   } else {
-    display.notSavedAnimation(100);
+    display.notSavedAnimation(100, &led);
   }
 
   // Exit the saving mode
@@ -212,6 +212,8 @@ bool confirmationMode(double voltage_to_save, double feed_to_save) {
   stopwatch = 0;
   int cycles = 0;
   bool off = false;
+
+  led.ShowColour(colourlist::LED_YELLOW);
 
   for ( ;; ) {  // confirmation mode loop
     incrementCooldowns();

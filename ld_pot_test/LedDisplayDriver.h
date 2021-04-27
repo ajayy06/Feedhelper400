@@ -2,6 +2,7 @@
 #define LedDisplayDriver_h
 
 #include "DigitLedDisplay.h"
+#include "SavingLed.h"
 
 class LedDisplayDriver
 {
@@ -10,8 +11,8 @@ class LedDisplayDriver
         void bootAnimation(int delay_ms);
         void displayValues(double voltage, double feed);
         void setDisplayBrightness(int brightness);
-        void notSavedAnimation(int delay_ms);
-        void savedAnimation(int delay_ms);
+        void notSavedAnimation(int delay_ms, SavingLed *led = nullptr);
+        void savedAnimation(int delay_ms, SavingLed *led = nullptr);
         void on();
         void off();
     private:

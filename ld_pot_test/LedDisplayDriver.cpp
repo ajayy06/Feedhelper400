@@ -118,26 +118,41 @@ void LedDisplayDriver::off() {
     ld_.off();
 }
 
-void LedDisplayDriver::notSavedAnimation(int delay_ms) {
+void LedDisplayDriver::notSavedAnimation(int delay_ms, SavingLed *led) {
     ld_.off();
     delay(800);
     ld_.on();
+    led->ShowColour(colourlist::LED_RED);
     for (int i = 0; i <= 10; i++) {
         ld_.setBright(i);
         delay(delay_ms);
     }
+    led->DimAnimation(3);
 }
 
-void LedDisplayDriver::savedAnimation(int delay_ms) {
+void LedDisplayDriver::savedAnimation(int delay_ms, SavingLed *led) {
     ld_.off();
+    led->off();
     delay(delay_ms + 500);
+
     ld_.on();
-    delay(delay_ms);
-    ld_.off();
-    delay(delay_ms);
-    ld_.on();
-    delay(delay_ms);
-    ld_.off();
+    led->ShowColour(colourlist::LED_GREEN);
     delay(delay_ms + 500);
+
+    ld_.off();
+    led->off();
+    delay(delay_ms);
+
     ld_.on();
+    led->ShowColour(colourlist::LED_GREEN);
+    delay(delay_ms);
+
+    ld_.off();
+    led->off();
+    delay(delay_ms);
+
+    ld_.on();
+    led->ShowColour(colourlist::LED_GREEN);
+    delay(delay_ms + 500);
+    led->DimAnimation(5);
 }
